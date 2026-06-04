@@ -1,8 +1,5 @@
-# compiler/lexer.py
-
 import re
 
-# توکن‌ها
 NUMBER = "NUMBER"
 IDENT = "IDENT"
 PLUS = "PLUS"
@@ -13,8 +10,25 @@ ASSIGN = "ASSIGN"
 LPAREN = "LPAREN"
 RPAREN = "RPAREN"
 
-# الگوهای توکن
+IF = "IF"
+ELSE = "ELSE"
+WHILE = "WHILE"
+
+GT = "GT"
+LT = "LT"
+GE = "GE"
+LE = "LE"
+EQ = "EQ"
+
+KEYWORDS = {"if": IF, "else": ELSE, "while": WHILE}
+
+# ---------------- COMPILED PATTERNS (FIX) ----------------
 token_specification = [
+    (GE, r">="),
+    (LE, r"<="),
+    (EQ, r"=="),
+    (GT, r">"),
+    (LT, r"<"),
     (NUMBER, r"\d+(\.\d+)?"),
     (IDENT, r"[a-zA-Z_][a-zA-Z0-9_]*"),
     (PLUS, r"\+"),
@@ -24,9 +38,10 @@ token_specification = [
     (ASSIGN, r"="),
     (LPAREN, r"\("),
     (RPAREN, r"\)"),
-    # 🔥 مهم: پشتیبانی از فاصله + خط جدید
     ("SKIP", r"[ \t\r\n]+"),
 ]
+
+compiled_specs = [(t, re.compile(p)) for t, p in token_specification]
 
 
 class Token:
@@ -45,16 +60,18 @@ def lexer(text):
     while pos < len(text):
         match = None
 
-        for tok_type, pattern in token_specification:
-            regex = re.compile(pattern)
+        for tok_type, regex in compiled_specs:
             match = regex.match(text, pos)
 
             if match:
                 value = match.group(0)
 
-                # skip whitespace
                 if tok_type != "SKIP":
-                    tokens.append(Token(tok_type, value))
+
+                    if tok_type == IDENT and value in KEYWORDS:
+                        tokens.append(Token(KEYWORDS[value], value))
+                    else:
+                        tokens.append(Token(tok_type, value))
 
                 pos = match.end()
                 break

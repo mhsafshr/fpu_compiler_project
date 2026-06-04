@@ -1,4 +1,4 @@
-from compiler.ast import Number, Var, BinOp, Assign, Program
+from compiler.ast import Number, Var, BinOp, Assign, Program, If, While
 
 
 class Parser:
@@ -15,12 +15,14 @@ class Parser:
         if self.current() and self.current().type == token_type:
             self.pos += 1
         else:
-            raise Exception(f"Expected {token_type}")
+            raise Exception(f"Expected {token_type}, got {self.current()}")
 
-    # ---------- expressions ----------
-
+    # ---------------- FACTOR ----------------
     def factor(self):
         token = self.current()
+
+        if token is None:
+            raise Exception("Unexpected end of input")
 
         if token.type == "NUMBER":
             self.eat("NUMBER")
@@ -32,12 +34,13 @@ class Parser:
 
         elif token.type == "LPAREN":
             self.eat("LPAREN")
-            node = self.expr()
+            node = self.comparison()
             self.eat("RPAREN")
             return node
 
-        raise Exception("Invalid syntax")
+        raise Exception(f"Invalid syntax near {token}")
 
+    # ---------------- TERM ----------------
     def term(self):
         node = self.factor()
 
@@ -48,6 +51,7 @@ class Parser:
 
         return node
 
+    # ---------------- EXPR ----------------
     def expr(self):
         node = self.term()
 
@@ -58,9 +62,39 @@ class Parser:
 
         return node
 
-    # ---------- statement ----------
+    # ---------------- COMPARISON ----------------
+    def comparison(self):
+        node = self.expr()
 
+        while self.current() and self.current().type in ("GT", "LT", "GE", "LE", "EQ"):
+            op = self.current().value
+            self.eat(self.current().type)
+            node = BinOp(node, op, self.expr())
+
+        return node
+
+    # ---------------- STATEMENT (FIXED FOR MULTI-STATEMENT BODY) ----------------
     def statement(self):
+
+        # ---------- IF ----------
+        if self.current() and self.current().type == "IF":
+            self.eat("IF")
+            condition = self.comparison()
+            then_body = self.parse_block()
+            else_body = None
+            if self.current() and self.current().type == "ELSE":
+                self.eat("ELSE")
+                else_body = self.parse_block()
+            return If(condition, then_body, else_body)
+
+        # ---------- WHILE (FIXED: reads multiple statements as body) ----------
+        if self.current() and self.current().type == "WHILE":
+            self.eat("WHILE")
+            condition = self.comparison()
+            body = self.parse_block()  # خواندن بلاک چند statement
+            return While(condition, body)
+
+        # ---------- ASSIGNMENT ----------
         if (
             self.current()
             and self.current().type == "IDENT"
@@ -70,13 +104,28 @@ class Parser:
             name = self.current().value
             self.eat("IDENT")
             self.eat("ASSIGN")
-            value = self.expr()
+            value = self.comparison()
             return Assign(name, value)
 
-        return self.expr()
+        # ---------- EXPRESSION ----------
+        return self.comparison()
 
-    # ---------- PROGRAM (NEW) ----------
+    # ---------------- NEW: PARSE BLOCK (multiple statements until next keyword) ----------------
+    def parse_block(self):
+        """خواندن یک بلاک از statements تا رسیدن به while بعدی، if بعدی، یا end of input"""
+        statements = []
 
+        while self.current() is not None:
+            # اگر به کلیدواژه‌های جدید رسیدیم، توقف کن (مال بلاک بعدی هستند)
+            if self.current().type in ["WHILE", "IF", "ELSE"]:
+                break
+
+            # خواندن یک statement
+            statements.append(self.statement())
+
+        return statements
+
+    # ---------------- PROGRAM ----------------
     def parse_program(self):
         statements = []
 

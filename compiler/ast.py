@@ -39,3 +39,20 @@ class Program:
 
     def __repr__(self):
         return f"Program({self.statements})"
+
+
+class If:
+    def __init__(self, condition, then_body, else_body=None):
+        self.condition = condition
+        self.then_body = then_body if isinstance(then_body, list) else [then_body]
+        self.else_body = (
+            else_body
+            if isinstance(else_body, list)
+            else ([else_body] if else_body else [])
+        )
+
+
+class While:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body if isinstance(body, list) else [body]
