@@ -9,9 +9,6 @@ class VM:
         self.last_result = None
         self.labels = {}
 
-    # -----------------------------
-    # preprocess labels
-    # -----------------------------
     def preprocess_labels(self, instructions):
         cleaned = []
         self.labels = {}
@@ -27,31 +24,22 @@ class VM:
 
         return cleaned
 
-    # -----------------------------
-    # safe pop
-    # -----------------------------
     def pop(self):
         if not self.stack:
             raise Exception("Stack underflow")
         return self.stack.pop()
 
-    # -----------------------------
-    # safe peek (برای دیباگ)
-    # -----------------------------
     def peek(self):
         if not self.stack:
             return None
         return self.stack[-1]
 
-    # -----------------------------
-    # run VM با پشتیبانی کامل از while
-    # -----------------------------
     def run(self, instructions):
         self.stack = []
         instructions = self.preprocess_labels(instructions)
 
         ip = 0
-        max_iterations = 10000  # جلوگیری از حلقه بی‌نهایت
+        max_iterations = 10000
         iteration_count = 0
 
         while ip < len(instructions) and iteration_count < max_iterations:
@@ -131,7 +119,7 @@ class VM:
                 result = 1.0 if a == b else 0.0
                 self.stack.append(result)
 
-            # ---------------- JUMP (پرش بدون شرط) ----------------
+            # ---------------- JUMP ----------------
             elif op == "JUMP":
                 label = parts[1]
                 if label not in self.labels:
@@ -139,7 +127,7 @@ class VM:
                 ip = self.labels[label]
                 continue
 
-            # ---------------- JUMP_IF_FALSE (پرش اگر شرط false باشد) ----------------
+            # ---------------- JUMP_IF_FALSE ----------------
             elif op == "JUMP_IF_FALSE":
                 label = parts[1]
                 if label not in self.labels:
@@ -147,12 +135,11 @@ class VM:
 
                 cond = self.pop()
 
-                # شرط false: هر مقداری که 0 یا 0.0 باشد
                 if cond == 0.0 or cond == 0:
                     ip = self.labels[label]
                     continue
 
-            # ---------------- JUMP_IF_TRUE (پرش اگر شرط true باشد) - برای راحتی ----------------
+            # ---------------- JUMP_IF_TRUE----------------
             elif op == "JUMP_IF_TRUE":
                 label = parts[1]
                 if label not in self.labels:
@@ -160,12 +147,11 @@ class VM:
 
                 cond = self.pop()
 
-                # شرط true: هر مقداری که 0 نباشد
                 if cond != 0.0 and cond != 0:
                     ip = self.labels[label]
                     continue
 
-            # ---------------- PRINT (برای دیباگ) ----------------
+            # ---------------- PRINT ----------------
             elif op == "PRINT":
                 val = self.pop()
                 print(f"[DEBUG] PRINT: {val}")
@@ -182,7 +168,6 @@ class VM:
         if iteration_count >= max_iterations:
             raise Exception("Maximum iterations exceeded - possible infinite loop")
 
-        # برگرداندن آخرین مقدار روی استک (اگر وجود داشته باشد)
         if self.stack:
             self.last_result = self.stack[-1]
             return self.last_result

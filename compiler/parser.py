@@ -91,7 +91,7 @@ class Parser:
         if self.current() and self.current().type == "WHILE":
             self.eat("WHILE")
             condition = self.comparison()
-            body = self.parse_block()  # خواندن بلاک چند statement
+            body = self.parse_block()
             return While(condition, body)
 
         # ---------- ASSIGNMENT ----------
@@ -116,7 +116,6 @@ class Parser:
         statements = []
 
         while self.current() is not None:
-            # اگر به کلیدواژه‌های جدید رسیدیم، توقف کن (مال بلاک بعدی هستند)
             if self.current().type in ["WHILE", "IF", "ELSE"]:
                 break
 
