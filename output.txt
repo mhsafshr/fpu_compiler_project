@@ -1,0 +1,40 @@
+Folder PATH listing
+Volume serial number is 00000063 6241:0CAF
+C:.
+¦   .gitattributes
+¦   .gitignore
+¦   main.py
+¦   output.txt
+¦   README.md
+¦   
++---compiler
+¦   ¦   ast.py
+¦   ¦   backend.py
+¦   ¦   codegen.py
+¦   ¦   ir.py
+¦   ¦   iropt.py
+¦   ¦   isa.py
+¦   ¦   lexer.py
+¦   ¦   optimizer.py
+¦   ¦   parser.py
+¦   ¦   
+¦   +---__pycache__
+¦           ast.cpython-312.pyc
+¦           codegen.cpython-312.pyc
+¦           lexer.cpython-312.pyc
+¦           optimizer.cpython-312.pyc
+¦           parser.cpython-312.pyc
+¦           
++---fpu
+¦   ¦   fpu_simulator.py
+¦   ¦   
+¦   +---__pycache__
+¦           fpu_simulator.cpython-312.pyc
+¦           
++---tests
++---vm
+    ¦   vm.py
+    ¦   
+    +---__pycache__
+            vm.cpython-312.pyc
+            

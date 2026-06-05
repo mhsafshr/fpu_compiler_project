@@ -1,14 +1,22 @@
 from fpu.fpu_simulator import FPUSimulator
+from compiler.isa import is_valid
 
 
 class VM:
     def __init__(self):
-        self.stack = []
-        self.variables = {}
+
+        # ---------------- REGISTERS ----------------
+        self.reg = {f"R{i}": 0.0 for i in range(6)}
+
+        # ---------------- FPU ----------------
         self.fpu = FPUSimulator()
+
+        # ---------------- LABEL TABLE ----------------
         self.labels = {}
 
-    # ---------------- LABEL PREPROCESS ----------------
+    # =========================================================
+    # LABEL PREPROCESS
+    # =========================================================
     def preprocess_labels(self, instructions):
         cleaned = []
         self.labels = {}
@@ -17,145 +25,164 @@ class VM:
             ins = ins.strip()
 
             if ins.startswith("LABEL"):
-                label = ins.split()[1]
-                self.labels[label] = len(cleaned)
+                parts = ins.split()
+
+                if len(parts) != 2:
+                    raise Exception(f"Invalid label: {ins}")
+
+                self.labels[parts[1]] = len(cleaned)
             else:
                 cleaned.append(ins)
 
         return cleaned
 
-    # ---------------- STACK OPS ----------------
-    def pop(self):
-        if not self.stack:
-            raise Exception("Stack underflow")
-        return self.stack.pop()
+    # =========================================================
+    # OPERAND RESOLVER
+    # =========================================================
+    def get(self, x):
+        if x in self.reg:
+            return self.reg[x]
 
-    def push(self, value):
-        self.stack.append(value)
+        try:
+            return float(x)
+        except:
+            raise Exception(f"Unknown operand: {x}")
 
-    # ---------------- EXECUTION ----------------
+    # =========================================================
+    # EXECUTION LOOP
+    # =========================================================
     def run(self, instructions):
-        self.stack = []
+
         instructions = self.preprocess_labels(instructions)
 
         ip = 0
-        max_iterations = 10000
-        iteration_count = 0
+        max_steps = 10000
+        steps = 0
 
-        while ip < len(instructions) and iteration_count < max_iterations:
-            iteration_count += 1
+        while ip < len(instructions):
+
+            if steps > max_steps:
+                raise Exception("Infinite loop detected")
+
+            steps += 1
+
             ins = instructions[ip]
             parts = ins.split()
             op = parts[0]
 
-            # ---------------- CONST ----------------
-            if op == "CONSTF":
-                self.push(float(parts[1]))
+            # ---------------- VALIDATION ----------------
+            if not is_valid(op):
+                raise Exception(f"Illegal instruction: {op}")
 
-            # ---------------- LOAD VARIABLE ----------------
-            elif op == "LOAD":
-                var = parts[1]
-                if var not in self.variables:
-                    raise Exception(f"Undefined variable: {var}")
-                self.push(self.variables[var])
+            # =====================================================
+            # MOV
+            # =====================================================
+            if op == "MOV":
+                self.reg[parts[1]] = self.get(parts[2])
 
-            # ---------------- STORE ----------------
-            elif op == "STORE":
-                var = parts[1]
-                self.variables[var] = self.pop()
+            # =====================================================
+            # ARITHMETIC
+            # =====================================================
+            elif op == "ADD":
+                self.reg[parts[1]] = self.get(parts[2]) + self.get(parts[3])
 
-            # ---------------- FPU OPS ----------------
+            elif op == "SUB":
+                self.reg[parts[1]] = self.get(parts[2]) - self.get(parts[3])
+
+            elif op == "MUL":
+                self.reg[parts[1]] = self.get(parts[2]) * self.get(parts[3])
+
+            elif op == "DIV":
+                b = self.get(parts[3])
+                if b == 0:
+                    raise ZeroDivisionError("Division by zero")
+                self.reg[parts[1]] = self.get(parts[2]) / b
+
+            # =====================================================
+            # FPU
+            # =====================================================
             elif op == "FADD":
-                b = self.pop()
-                a = self.pop()
-                self.push(self.fpu.add(a, b))
+                self.reg[parts[1]] = self.fpu.add(
+                    self.get(parts[2]), self.get(parts[3])
+                )
 
             elif op == "FSUB":
-                b = self.pop()
-                a = self.pop()
-                self.push(self.fpu.sub(a, b))
+                self.reg[parts[1]] = self.fpu.sub(
+                    self.get(parts[2]), self.get(parts[3])
+                )
 
             elif op == "FMUL":
-                b = self.pop()
-                a = self.pop()
-                self.push(self.fpu.mul(a, b))
+                self.reg[parts[1]] = self.fpu.mul(
+                    self.get(parts[2]), self.get(parts[3])
+                )
 
             elif op == "FDIV":
-                b = self.pop()
-                a = self.pop()
-                self.push(self.fpu.div(a, b))
+                self.reg[parts[1]] = self.fpu.div(
+                    self.get(parts[2]), self.get(parts[3])
+                )
 
-            # ---------------- COMPARISON ----------------
+            # =====================================================
+            # COMPARISON → stored in destination register
+            # =====================================================
             elif op == "GT":
-                b = self.pop()
-                a = self.pop()
-                self.push(1.0 if a > b else 0.0)
+                self.reg[parts[1]] = (
+                    1.0 if self.get(parts[2]) > self.get(parts[3]) else 0.0
+                )
 
             elif op == "LT":
-                b = self.pop()
-                a = self.pop()
-                self.push(1.0 if a < b else 0.0)
+                self.reg[parts[1]] = (
+                    1.0 if self.get(parts[2]) < self.get(parts[3]) else 0.0
+                )
 
             elif op == "GE":
-                b = self.pop()
-                a = self.pop()
-                self.push(1.0 if a >= b else 0.0)
+                self.reg[parts[1]] = (
+                    1.0 if self.get(parts[2]) >= self.get(parts[3]) else 0.0
+                )
 
             elif op == "LE":
-                b = self.pop()
-                a = self.pop()
-                self.push(1.0 if a <= b else 0.0)
+                self.reg[parts[1]] = (
+                    1.0 if self.get(parts[2]) <= self.get(parts[3]) else 0.0
+                )
 
             elif op == "EQ":
-                b = self.pop()
-                a = self.pop()
-                self.push(1.0 if a == b else 0.0)
+                self.reg[parts[1]] = (
+                    1.0 if self.get(parts[2]) == self.get(parts[3]) else 0.0
+                )
 
-            # ---------------- JUMP ----------------
+            # =====================================================
+            # CONTROL FLOW
+            # =====================================================
             elif op == "JUMP":
-                label = parts[1]
-                if label not in self.labels:
-                    raise Exception(f"Undefined label: {label}")
-                ip = self.labels[label]
+                ip = self.labels[parts[1]]
                 continue
 
             elif op == "JUMP_IF_FALSE":
-                label = parts[1]
-                cond = self.pop()
-
-                if cond == 0.0:
-                    ip = self.labels[label]
+                if self.reg[parts[1]] == 0.0:
+                    ip = self.labels[parts[2]]
                     continue
 
             elif op == "JUMP_IF_TRUE":
-                label = parts[1]
-                cond = self.pop()
-
-                if cond != 0.0:
-                    ip = self.labels[label]
+                if self.reg[parts[1]] != 0.0:
+                    ip = self.labels[parts[2]]
                     continue
 
-            # ---------------- PRINT ----------------
+            # =====================================================
+            # OUTPUT
+            # =====================================================
             elif op == "PRINT":
-                val = self.pop()
-                print(f">>> {val}")
+                print(self.reg[parts[1]])
 
-            # ---------------- HALT ----------------
             elif op == "HALT":
                 break
 
-            else:
-                raise Exception(f"Unknown instruction: {ins}")
-
             ip += 1
 
-        if iteration_count >= max_iterations:
-            raise Exception("Infinite loop detected")
+        return self.reg["R0"]
 
-        return self.stack[-1] if self.stack else None
-
-    # ---------------- RESET ----------------
+    # =========================================================
+    # RESET
+    # =========================================================
     def reset(self):
-        self.stack = []
-        self.variables = {}
-        self.labels = {}
+        for k in self.reg:
+            self.reg[k] = 0.0
+        self.labels.clear()
