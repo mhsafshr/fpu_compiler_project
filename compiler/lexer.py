@@ -13,6 +13,7 @@ RPAREN = "RPAREN"
 IF = "IF"
 ELSE = "ELSE"
 WHILE = "WHILE"
+PRINT = "PRINT"
 
 GT = "GT"
 LT = "LT"
@@ -20,16 +21,21 @@ GE = "GE"
 LE = "LE"
 EQ = "EQ"
 
-KEYWORDS = {"if": IF, "else": ELSE, "while": WHILE}
+KEYWORDS = {
+    "if": IF,
+    "else": ELSE,
+    "while": WHILE,
+    "print": PRINT,
+}
 
-# ---------------- COMPILED PATTERNS (FIX) ----------------
+# ---------------- COMPILED PATTERNS ----------------
 token_specification = [
     (GE, r">="),
     (LE, r"<="),
     (EQ, r"=="),
     (GT, r">"),
     (LT, r"<"),
-    (NUMBER, r"\d+(\.\d+)?"),
+    (NUMBER, r"(\d+\.\d+|\d+|\.\d+)"),
     (IDENT, r"[a-zA-Z_][a-zA-Z0-9_]*"),
     (PLUS, r"\+"),
     (MINUS, r"-"),
@@ -67,7 +73,6 @@ def lexer(text):
                 value = match.group(0)
 
                 if tok_type != "SKIP":
-
                     if tok_type == IDENT and value in KEYWORDS:
                         tokens.append(Token(KEYWORDS[value], value))
                     else:

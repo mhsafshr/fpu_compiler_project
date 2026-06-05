@@ -1,4 +1,4 @@
-from compiler.ast import Number, Var, BinOp, Assign, Program, If, While
+from compiler.ast import Number, Var, BinOp, Assign, Program, If, While, Print
 
 
 class CodeGenerator:
@@ -16,9 +16,7 @@ class CodeGenerator:
         self.label_count += 1
         return label
 
-    # ---------------- VISIT BLOCK SAFE ----------------
     def visit_block(self, node):
-        # support both list and single statement
         if isinstance(node, list):
             for stmt in node:
                 self.visit(stmt)
@@ -27,24 +25,29 @@ class CodeGenerator:
 
     def visit(self, node):
 
-        # ---------------- Program ----------------
+        # ---------------- PROGRAM ----------------
         if isinstance(node, Program):
             self.visit_block(node.statements)
 
-        # ---------------- Number ----------------
+        # ---------------- NUMBER ----------------
         elif isinstance(node, Number):
-            self.instructions.append(f"LOADF {node.value}")
+            self.instructions.append(f"CONSTF {node.value}")
 
-        # ---------------- Var ----------------
+        # ---------------- VARIABLE ----------------
         elif isinstance(node, Var):
-            self.instructions.append(f"LOADF {node.name}")
+            self.instructions.append(f"LOAD {node.name}")
 
-        # ---------------- Assign ----------------
+        # ---------------- ASSIGN ----------------
         elif isinstance(node, Assign):
             self.visit(node.value)
             self.instructions.append(f"STORE {node.name}")
 
-        # ---------------- BinOp ----------------
+        # ---------------- PRINT ----------------
+        elif isinstance(node, Print):
+            self.visit(node.expr)
+            self.instructions.append("PRINT")
+
+        # ---------------- BINARY OP ----------------
         elif isinstance(node, BinOp):
             self.visit(node.left)
             self.visit(node.right)
@@ -68,7 +71,6 @@ class CodeGenerator:
 
         # ---------------- IF ----------------
         elif isinstance(node, If):
-
             else_label = self.new_label()
             end_label = self.new_label()
 
@@ -78,20 +80,19 @@ class CodeGenerator:
             self.visit_block(node.then_body)
             self.instructions.append(f"JUMP {end_label}")
 
-            self.instructions.append(f"{else_label}:")
+            self.instructions.append(f"LABEL {else_label}")
 
             if node.else_body:
                 self.visit_block(node.else_body)
 
-            self.instructions.append(f"{end_label}:")
+            self.instructions.append(f"LABEL {end_label}")
 
         # ---------------- WHILE ----------------
         elif isinstance(node, While):
-
             start_label = self.new_label()
             end_label = self.new_label()
 
-            self.instructions.append(f"{start_label}:")
+            self.instructions.append(f"LABEL {start_label}")
 
             self.visit(node.condition)
             self.instructions.append(f"JUMP_IF_FALSE {end_label}")
@@ -99,8 +100,7 @@ class CodeGenerator:
             self.visit_block(node.body)
 
             self.instructions.append(f"JUMP {start_label}")
-
-            self.instructions.append(f"{end_label}:")
+            self.instructions.append(f"LABEL {end_label}")
 
         else:
             raise Exception(f"Unknown node type: {type(node)}")

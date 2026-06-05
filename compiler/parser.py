@@ -1,4 +1,4 @@
-from compiler.ast import Number, Var, BinOp, Assign, Program, If, While
+from compiler.ast import Number, Var, BinOp, Assign, Program, If, While, Print
 
 
 class Parser:
@@ -34,7 +34,7 @@ class Parser:
 
         elif token.type == "LPAREN":
             self.eat("LPAREN")
-            node = self.comparison()
+            node = self.expr()
             self.eat("RPAREN")
             return node
 
@@ -73,28 +73,36 @@ class Parser:
 
         return node
 
-    # ---------------- STATEMENT (FIXED FOR MULTI-STATEMENT BODY) ----------------
+    # ---------------- STATEMENT ----------------
     def statement(self):
 
-        # ---------- IF ----------
+        # PRINT
+        if self.current() and self.current().type == "PRINT":
+            self.eat("PRINT")
+            expr = self.comparison()
+            return Print(expr)
+
+        # IF
         if self.current() and self.current().type == "IF":
             self.eat("IF")
             condition = self.comparison()
-            then_body = self.parse_block()
+            then_body = self.block()
+
             else_body = None
             if self.current() and self.current().type == "ELSE":
                 self.eat("ELSE")
-                else_body = self.parse_block()
+                else_body = self.block()
+
             return If(condition, then_body, else_body)
 
-        # ---------- WHILE (FIXED: reads multiple statements as body) ----------
+        # WHILE
         if self.current() and self.current().type == "WHILE":
             self.eat("WHILE")
             condition = self.comparison()
-            body = self.parse_block()
+            body = self.block()
             return While(condition, body)
 
-        # ---------- ASSIGNMENT ----------
+        # ASSIGN
         if (
             self.current()
             and self.current().type == "IDENT"
@@ -107,19 +115,14 @@ class Parser:
             value = self.comparison()
             return Assign(name, value)
 
-        # ---------- EXPRESSION ----------
+        # fallback expression
         return self.comparison()
 
-    # ---------------- NEW: PARSE BLOCK (multiple statements until next keyword) ----------------
-    def parse_block(self):
-        """خواندن یک بلاک از statements تا رسیدن به while بعدی، if بعدی، یا end of input"""
+    # ---------------- BLOCK ----------------
+    def block(self):
         statements = []
 
-        while self.current() is not None:
-            if self.current().type in ["WHILE", "IF", "ELSE"]:
-                break
-
-            # خواندن یک statement
+        while self.current() is not None and self.current().type not in ("ELSE",):
             statements.append(self.statement())
 
         return statements
@@ -135,5 +138,4 @@ class Parser:
 
 
 def parse(tokens):
-    parser = Parser(tokens)
-    return parser.parse_program()
+    return Parser(tokens).parse_program()

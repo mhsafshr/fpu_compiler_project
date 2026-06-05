@@ -27,22 +27,26 @@ while True:
             ast = parse(tokens)
             opt_ast = optimizer.optimize(ast)
             instructions = codegen.generate(opt_ast)
-            print("\n🔧 INSTRUCTIONS BEFORE VM:")
-            for i, ins in enumerate(instructions):
-                print(f"  {i}: {ins}")
-            print("-----------------------------")
+
             result = vm.run(instructions)
 
-            # ---------------- Output ----------------
-            print("\nTOKENS:", tokens)
-            print("\nAST:", ast)
-            print("\nOPTIMIZED AST:", opt_ast)
+            # ---------------- Debug Output ----------------
+            print("\nTOKENS:")
+            print(tokens)
+
+            print("\nAST:")
+            print(ast)
+
+            print("\nOPTIMIZED AST:")
+            print(opt_ast)
 
             print("\nINSTRUCTIONS:")
-            for i in instructions:
-                print(i)
+            for i, ins in enumerate(instructions):
+                print(f"{i}: {ins}")
 
-            print("\nRESULT:", result)
+            print("\nRESULT:")
+            print(result)
+
             print("\n-----------------------------\n")
 
         except Exception as e:

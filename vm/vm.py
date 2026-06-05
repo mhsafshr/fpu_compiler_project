@@ -6,9 +6,9 @@ class VM:
         self.stack = []
         self.variables = {}
         self.fpu = FPUSimulator()
-        self.last_result = None
         self.labels = {}
 
+    # ---------------- LABEL PREPROCESS ----------------
     def preprocess_labels(self, instructions):
         cleaned = []
         self.labels = {}
@@ -16,24 +16,24 @@ class VM:
         for i, ins in enumerate(instructions):
             ins = ins.strip()
 
-            if ins.endswith(":"):
-                label = ins[:-1].strip()
+            if ins.startswith("LABEL"):
+                label = ins.split()[1]
                 self.labels[label] = len(cleaned)
             else:
                 cleaned.append(ins)
 
         return cleaned
 
+    # ---------------- STACK OPS ----------------
     def pop(self):
         if not self.stack:
             raise Exception("Stack underflow")
         return self.stack.pop()
 
-    def peek(self):
-        if not self.stack:
-            return None
-        return self.stack[-1]
+    def push(self, value):
+        self.stack.append(value)
 
+    # ---------------- EXECUTION ----------------
     def run(self, instructions):
         self.stack = []
         instructions = self.preprocess_labels(instructions)
@@ -48,76 +48,68 @@ class VM:
             parts = ins.split()
             op = parts[0]
 
-            # ---------------- LOADF ----------------
-            if op == "LOADF":
-                value = parts[1]
+            # ---------------- CONST ----------------
+            if op == "CONSTF":
+                self.push(float(parts[1]))
 
-                try:
-                    value = float(value)
-                except ValueError:
-                    if value in self.variables:
-                        value = self.variables[value]
-                    else:
-                        raise Exception(f"Undefined variable: {value}")
-
-                self.stack.append(value)
+            # ---------------- LOAD VARIABLE ----------------
+            elif op == "LOAD":
+                var = parts[1]
+                if var not in self.variables:
+                    raise Exception(f"Undefined variable: {var}")
+                self.push(self.variables[var])
 
             # ---------------- STORE ----------------
             elif op == "STORE":
-                var_name = parts[1]
-                self.variables[var_name] = self.pop()
+                var = parts[1]
+                self.variables[var] = self.pop()
 
-            # ---------------- ARITHMETIC ----------------
+            # ---------------- FPU OPS ----------------
             elif op == "FADD":
                 b = self.pop()
                 a = self.pop()
-                self.stack.append(self.fpu.add(a, b))
+                self.push(self.fpu.add(a, b))
 
             elif op == "FSUB":
                 b = self.pop()
                 a = self.pop()
-                self.stack.append(self.fpu.sub(a, b))
+                self.push(self.fpu.sub(a, b))
 
             elif op == "FMUL":
                 b = self.pop()
                 a = self.pop()
-                self.stack.append(self.fpu.mul(a, b))
+                self.push(self.fpu.mul(a, b))
 
             elif op == "FDIV":
                 b = self.pop()
                 a = self.pop()
-                self.stack.append(self.fpu.div(a, b))
+                self.push(self.fpu.div(a, b))
 
             # ---------------- COMPARISON ----------------
             elif op == "GT":
                 b = self.pop()
                 a = self.pop()
-                result = 1.0 if a > b else 0.0
-                self.stack.append(result)
+                self.push(1.0 if a > b else 0.0)
 
             elif op == "LT":
                 b = self.pop()
                 a = self.pop()
-                result = 1.0 if a < b else 0.0
-                self.stack.append(result)
+                self.push(1.0 if a < b else 0.0)
 
             elif op == "GE":
                 b = self.pop()
                 a = self.pop()
-                result = 1.0 if a >= b else 0.0
-                self.stack.append(result)
+                self.push(1.0 if a >= b else 0.0)
 
             elif op == "LE":
                 b = self.pop()
                 a = self.pop()
-                result = 1.0 if a <= b else 0.0
-                self.stack.append(result)
+                self.push(1.0 if a <= b else 0.0)
 
             elif op == "EQ":
                 b = self.pop()
                 a = self.pop()
-                result = 1.0 if a == b else 0.0
-                self.stack.append(result)
+                self.push(1.0 if a == b else 0.0)
 
             # ---------------- JUMP ----------------
             elif op == "JUMP":
@@ -127,34 +119,26 @@ class VM:
                 ip = self.labels[label]
                 continue
 
-            # ---------------- JUMP_IF_FALSE ----------------
             elif op == "JUMP_IF_FALSE":
                 label = parts[1]
-                if label not in self.labels:
-                    raise Exception(f"Undefined label: {label}")
-
                 cond = self.pop()
 
-                if cond == 0.0 or cond == 0:
+                if cond == 0.0:
                     ip = self.labels[label]
                     continue
 
-            # ---------------- JUMP_IF_TRUE----------------
             elif op == "JUMP_IF_TRUE":
                 label = parts[1]
-                if label not in self.labels:
-                    raise Exception(f"Undefined label: {label}")
-
                 cond = self.pop()
 
-                if cond != 0.0 and cond != 0:
+                if cond != 0.0:
                     ip = self.labels[label]
                     continue
 
             # ---------------- PRINT ----------------
             elif op == "PRINT":
                 val = self.pop()
-                print(f"[DEBUG] PRINT: {val}")
+                print(f">>> {val}")
 
             # ---------------- HALT ----------------
             elif op == "HALT":
@@ -166,19 +150,12 @@ class VM:
             ip += 1
 
         if iteration_count >= max_iterations:
-            raise Exception("Maximum iterations exceeded - possible infinite loop")
+            raise Exception("Infinite loop detected")
 
-        if self.stack:
-            self.last_result = self.stack[-1]
-            return self.last_result
+        return self.stack[-1] if self.stack else None
 
-        return None
-
-    # -----------------------------
-    # reset VM state
-    # -----------------------------
+    # ---------------- RESET ----------------
     def reset(self):
         self.stack = []
         self.variables = {}
-        self.last_result = None
         self.labels = {}

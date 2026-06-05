@@ -51,8 +51,26 @@ class If:
             else ([else_body] if else_body else [])
         )
 
+    def __repr__(self):
+        return (
+            f"If({self.condition}, "
+            f"then={self.then_body}, "
+            f"else={self.else_body})"
+        )
+
 
 class While:
     def __init__(self, condition, body):
         self.condition = condition
         self.body = body if isinstance(body, list) else [body]
+
+    def __repr__(self):
+        return f"While({self.condition}, body={self.body})"
+
+
+class Print:
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"Print({self.expr})"
