@@ -17,7 +17,6 @@ class Parser:
         else:
             raise Exception(f"Expected {token_type}, got {self.current()}")
 
-    # ---------------- FACTOR ----------------
     def factor(self):
         token = self.current()
 
@@ -34,13 +33,12 @@ class Parser:
 
         elif token.type == "LPAREN":
             self.eat("LPAREN")
-            node = self.expr()
+            node = self.comparison()
             self.eat("RPAREN")
             return node
 
         raise Exception(f"Invalid syntax near {token}")
 
-    # ---------------- TERM ----------------
     def term(self):
         node = self.factor()
 
@@ -51,7 +49,6 @@ class Parser:
 
         return node
 
-    # ---------------- EXPR ----------------
     def expr(self):
         node = self.term()
 
@@ -62,47 +59,48 @@ class Parser:
 
         return node
 
-    # ---------------- COMPARISON ----------------
     def comparison(self):
         node = self.expr()
 
         while self.current() and self.current().type in ("GT", "LT", "GE", "LE", "EQ"):
             op = self.current().value
             self.eat(self.current().type)
-            node = BinOp(node, op, self.expr())
+            node = BinOp(node, op, self.comparison())
 
         return node
 
-    # ---------------- STATEMENT ----------------
     def statement(self):
-
-        # PRINT
         if self.current() and self.current().type == "PRINT":
             self.eat("PRINT")
             expr = self.comparison()
             return Print(expr)
 
-        # IF
         if self.current() and self.current().type == "IF":
             self.eat("IF")
-            condition = self.comparison()
-            then_body = self.block()
 
-            else_body = None
-            if self.current() and self.current().type == "ELSE":
-                self.eat("ELSE")
-                else_body = self.block()
+            if self.current() and self.current().type == "LPAREN":
+                self.eat("LPAREN")
+                condition = self.comparison()
+                self.eat("RPAREN")
+            else:
+                condition = self.comparison()
 
-            return If(condition, then_body, else_body)
+            then_body = self.block(inside_if=True)
+            return If(condition, then_body, None)
 
-        # WHILE
         if self.current() and self.current().type == "WHILE":
             self.eat("WHILE")
-            condition = self.comparison()
-            body = self.block()
+
+            if self.current() and self.current().type == "LPAREN":
+                self.eat("LPAREN")
+                condition = self.comparison()
+                self.eat("RPAREN")
+            else:
+                condition = self.comparison()
+
+            body = self.block(inside_if=False)
             return While(condition, body)
 
-        # ASSIGN
         if (
             self.current()
             and self.current().type == "IDENT"
@@ -115,19 +113,31 @@ class Parser:
             value = self.comparison()
             return Assign(name, value)
 
-        # fallback expression
         return self.comparison()
 
-    # ---------------- BLOCK ----------------
-    def block(self):
+    def block(self, inside_if=False):
         statements = []
 
-        while self.current() is not None and self.current().type not in ("ELSE",):
-            statements.append(self.statement())
+        while self.current() is not None:
+            if inside_if:
+                if self.current().type == "IDENT":
+                    if (
+                        self.pos + 1 < len(self.tokens)
+                        and self.tokens[self.pos + 1].type == "ASSIGN"
+                    ):
+                        break
+
+            if self.current().type in ("WHILE", "IF", "PRINT") or (
+                self.current().type == "IDENT"
+                and self.pos + 1 < len(self.tokens)
+                and self.tokens[self.pos + 1].type == "ASSIGN"
+            ):
+                statements.append(self.statement())
+            else:
+                break
 
         return statements
 
-    # ---------------- PROGRAM ----------------
     def parse_program(self):
         statements = []
 

@@ -11,7 +11,6 @@ LPAREN = "LPAREN"
 RPAREN = "RPAREN"
 
 IF = "IF"
-ELSE = "ELSE"
 WHILE = "WHILE"
 PRINT = "PRINT"
 
@@ -23,12 +22,10 @@ EQ = "EQ"
 
 KEYWORDS = {
     "if": IF,
-    "else": ELSE,
     "while": WHILE,
     "print": PRINT,
 }
 
-# ---------------- COMPILED PATTERNS ----------------
 token_specification = [
     (GE, r">="),
     (LE, r"<="),

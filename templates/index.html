@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FPU Studio | Mini Compiler</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+
+<style>
+:root {
+    --bg-dark: #0a0c10;
+    --bg-panel: #0f1117;
+    --bg-panel2: #161b22;
+    --border-subtle: #21262d;
+    --accent: #58a6ff;
+    --text-primary: #f0f3f8;
+    --text-secondary: #8b949e;
+    --green: #3fb950;
+    --red: #f85149;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* HEADER */
+.header {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.logo {
+    font-weight: 700;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, #e6edf3 0%, #58a6ff 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo::before {
+    content: "⚡";
+    color: var(--accent);
+}
+
+.run-btn {
+    background: linear-gradient(95deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    padding: 8px 24px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 40px;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.run-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+/* MAIN CONTENT - FLEX ROW */
+.main-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* EDITOR */
+.editor-section {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-subtle);
+    background: var(--bg-panel);
+    min-width: 0;
+}
+
+.editor-label {
+    padding: 10px 16px;
+    background: rgba(22, 27, 34, 0.8);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+.CodeMirror {
+    flex: 1;
+    height: auto !important;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-panel) !important;
+}
+
+.CodeMirror-gutters {
+    background: #0c0f14 !important;
+}
+
+/* SIDEBAR */
+.sidebar-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-panel2);
+    min-width: 0;
+}
+
+.tabs {
+    display: flex;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 8px;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.tab {
+    padding: 10px 16px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.tab:hover {
+    color: var(--text-primary);
+}
+
+.tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.panel-content {
+    flex: 1;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* TERMINAL - VISIBLE ALWAYS */
+.terminal-section {
+    flex-shrink: 0;
+    background: #0a0c10;
+    border-top: 2px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-header {
+    padding: 8px 16px;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terminal-header::before {
+    content: "❯";
+    color: var(--green);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.terminal-output {
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow: auto;
+    white-space: pre-wrap;
+    max-height: 200px;
+    min-height: 140px;
+}
+
+.success {
+    color: var(--green);
+}
+
+.error {
+    color: var(--red);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #1a1f2a;
+}
+::-webkit-scrollbar-thumb {
+    background: #3d444d;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    .editor-section {
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+        min-height: 200px;
+    }
+    .tab {
+        padding: 8px 12px;
+        font-size: 0.65rem;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo">FPU STUDIO</div>
+    <button class="run-btn" onclick="runCode()">▶ RUN</button>
+</div>
+
+<div class="main-content">
+    <!-- EDITOR -->
+    <div class="editor-section">
+        <div class="editor-label">📝 CODE EDITOR</div>
+        <textarea id="code">
+a = 2 + 3
+print a
+
+b = 5 * 2
+print b
+
+c = a + b
+print c
+        </textarea>
+    </div>
+
+    <!-- SIDEBAR WITH TABS -->
+    <div class="sidebar-section">
+        <div class="tabs">
+            <div class="tab active" data-tab="tokens">TOKENS</div>
+            <div class="tab" data-tab="ast">AST</div>
+            <div class="tab" data-tab="optimized_ast">OPT AST</div>
+            <div class="tab" data-tab="ir">IR</div>
+            <div class="tab" data-tab="instructions">ISA</div>
+        </div>
+        <div class="panel-content" id="panel">
+            <span style="color:#6e7681;">— click RUN to compile —</span>
+        </div>
+    </div>
+</div>
+
+<!-- TERMINAL - FIXED AT BOTTOM -->
+<div class="terminal-section">
+    <div class="terminal-header">OUTPUT TERMINAL</div>
+    <div class="terminal-output" id="output">—</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+
+<script>
+const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+    theme: "dracula",
+    lineNumbers: true,
+    mode: "python",
+    lineWrapping: true,
+    indentUnit: 4,
+    tabSize: 4
+});
+
+let compilerData = {};
+let currentTab = "tokens";
+
+// Tab click handlers
+document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", function() {
+        currentTab = this.getAttribute("data-tab");
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        this.classList.add("active");
+        updatePanel();
+    });
+});
+
+function updatePanel() {
+    const panel = document.getElementById("panel");
+    let content = "";
+    
+    if (currentTab === "tokens") content = compilerData.tokens?.join("\n");
+    else if (currentTab === "ast") content = compilerData.ast;
+    else if (currentTab === "optimized_ast") content = compilerData.optimized_ast;
+    else if (currentTab === "ir") content = compilerData.ir?.join("\n");
+    else if (currentTab === "instructions") content = compilerData.instructions?.join("\n");
+    
+    if (content && content.trim()) {
+        panel.textContent = content;
+    } else {
+        panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+    }
+}
+
+async function runCode() {
+    const code = editor.getValue();
+    const outputDiv = document.getElementById("output");
+    const runBtn = document.querySelector(".run-btn");
+    
+    outputDiv.innerHTML = '<span style="color:#8b949e;">⏳ compiling...</span>';
+    runBtn.disabled = true;
+    runBtn.style.opacity = "0.6";
+    
+    try {
+        const response = await fetch("/compile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: code })
+        });
+        
+        const data = await response.json();
+        compilerData = data;
+        
+        if (data.success) {
+            // Show output in terminal
+            let outputText = data.output || data.result || "(no output)";
+            outputDiv.innerHTML = `<span class="success">✓ SUCCESS</span>\n\n${escapeHtml(outputText)}`;
+            updatePanel();
+        } else {
+            outputDiv.innerHTML = `<span class="error">✗ ERROR</span>\n\n${escapeHtml(data.error || "Unknown error")}`;
+        }
+    } catch (err) {
+        outputDiv.innerHTML = `<span class="error">✗ CONNECTION ERROR</span>\n\nCould not connect to server.\nMake sure Flask is running on port 5000.\n\n${err.message}`;
+    } finally {
+        runBtn.disabled = false;
+        runBtn.style.opacity = "1";
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Ctrl+Enter shortcut
+document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        runCode();
+    }
+});
+
+// Auto run on load
+setTimeout(runCode, 300);
+</script>
+</body>
+</html>

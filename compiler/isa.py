@@ -1,5 +1,3 @@
-# compiler/isa.py
-
 ARITHMETIC_OPS = ["ADD", "SUB", "MUL", "DIV"]
 
 FPU_OPS = ["FADD", "FSUB", "FMUL", "FDIV"]

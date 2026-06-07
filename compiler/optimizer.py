@@ -3,7 +3,6 @@ from compiler.ast import Number, Var, BinOp, Assign, Program, If, While, Print
 
 class Optimizer:
 
-    # ---------------- BLOCK ----------------
     def optimize_block(self, block):
         if block is None:
             return []
@@ -13,67 +12,77 @@ class Optimizer:
             for stmt in block:
                 optimized = self.optimize(stmt)
                 if optimized is not None:
-                    result.append(optimized)
+                    if isinstance(optimized, Program):
+                        result.extend(optimized.statements)
+                    else:
+                        result.append(optimized)
             return result
 
         optimized = self.optimize(block)
-        return [optimized] if optimized is not None else []
+        if optimized is None:
+            return []
+        if isinstance(optimized, Program):
+            return optimized.statements
+        return [optimized]
 
-    # ---------------- MAIN OPTIMIZE ----------------
     def optimize(self, node):
-
-        # ---------------- PROGRAM ----------------
         if isinstance(node, Program):
             return Program(self.optimize_block(node.statements))
 
-        # ---------------- LEAF NODES ----------------
         if isinstance(node, (Number, Var)):
             return node
 
-        # ---------------- ASSIGN ----------------
         if isinstance(node, Assign):
             return Assign(node.name, self.optimize(node.value))
 
-        # ---------------- PRINT ----------------
         if isinstance(node, Print):
             return Print(self.optimize(node.expr))
 
-        # ---------------- IF ----------------
         if isinstance(node, If):
             condition = self.optimize(node.condition)
             then_body = self.optimize_block(node.then_body)
-            else_body = self.optimize_block(node.else_body)
+            else_body = self.optimize_block(node.else_body) if node.else_body else []
 
-            # constant folding for IF
             if isinstance(condition, Number):
                 if condition.value != 0:
-                    return Program(then_body)
+                    if len(then_body) == 0:
+                        return None
+                    elif len(then_body) == 1:
+                        return then_body[0]
+                    else:
+                        return Program(then_body)
                 else:
-                    return Program(else_body) if else_body else Program([])
+                    if len(else_body) == 0:
+                        return None
+                    elif len(else_body) == 1:
+                        return else_body[0]
+                    else:
+                        return Program(else_body)
+
+            if not else_body:
+                else_body = None
 
             return If(condition, then_body, else_body)
 
-        # ---------------- WHILE ----------------
         if isinstance(node, While):
             condition = self.optimize(node.condition)
             body = self.optimize_block(node.body)
 
-            # dead loop elimination
-            if isinstance(condition, Number) and condition.value == 0:
-                return Program([])
+            if isinstance(condition, Number):
+                if condition.value == 0:
+                    return None
+
+            if not body:
+                return None
 
             return While(condition, body)
 
-        # ---------------- BINOP ----------------
         if isinstance(node, BinOp):
-
             left = self.optimize(node.left)
             right = self.optimize(node.right)
             op = node.op
 
-            # constant folding
             if isinstance(left, Number) and isinstance(right, Number):
-
                 if op == "+":
                     return Number(left.value + right.value)
                 if op == "-":
@@ -81,8 +90,9 @@ class Optimizer:
                 if op == "*":
                     return Number(left.value * right.value)
                 if op == "/":
+                    if right.value == 0:
+                        raise ZeroDivisionError("Division by zero in optimizer")
                     return Number(left.value / right.value)
-
                 if op == ">":
                     return Number(1.0 if left.value > right.value else 0.0)
                 if op == "<":
@@ -94,7 +104,6 @@ class Optimizer:
                 if op == "==":
                     return Number(1.0 if left.value == right.value else 0.0)
 
-            # algebraic simplification
             if op == "+":
                 if isinstance(right, Number) and right.value == 0:
                     return left
@@ -107,7 +116,6 @@ class Optimizer:
                         return left
                     if right.value == 0:
                         return Number(0.0)
-
                 if isinstance(left, Number):
                     if left.value == 1:
                         return right
