@@ -13,6 +13,8 @@ RPAREN = "RPAREN"
 IF = "IF"
 WHILE = "WHILE"
 PRINT = "PRINT"
+DO = "DO"
+END = "END"
 
 GT = "GT"
 LT = "LT"
@@ -24,6 +26,8 @@ KEYWORDS = {
     "if": IF,
     "while": WHILE,
     "print": PRINT,
+    "do": DO,
+    "end": END,
 }
 
 token_specification = [

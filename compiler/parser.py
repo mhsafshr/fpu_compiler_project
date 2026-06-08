@@ -69,6 +69,13 @@ class Parser:
 
         return node
 
+    def block(self):
+        statements = []
+        while self.current() and self.current().type != "END":
+            statements.append(self.statement())
+        self.eat("END")
+        return statements
+
     def statement(self):
         if self.current() and self.current().type == "PRINT":
             self.eat("PRINT")
@@ -85,7 +92,7 @@ class Parser:
             else:
                 condition = self.comparison()
 
-            then_body = self.block(inside_if=True)
+            then_body = self.block()
             return If(condition, then_body, None)
 
         if self.current() and self.current().type == "WHILE":
@@ -98,7 +105,12 @@ class Parser:
             else:
                 condition = self.comparison()
 
-            body = self.block(inside_if=False)
+            if self.current() and self.current().type == "DO":
+                self.eat("DO")
+                body = self.block()
+            else:
+                body = [self.statement()]
+
             return While(condition, body)
 
         if (
@@ -114,29 +126,6 @@ class Parser:
             return Assign(name, value)
 
         return self.comparison()
-
-    def block(self, inside_if=False):
-        statements = []
-
-        while self.current() is not None:
-            if inside_if:
-                if self.current().type == "IDENT":
-                    if (
-                        self.pos + 1 < len(self.tokens)
-                        and self.tokens[self.pos + 1].type == "ASSIGN"
-                    ):
-                        break
-
-            if self.current().type in ("WHILE", "IF", "PRINT") or (
-                self.current().type == "IDENT"
-                and self.pos + 1 < len(self.tokens)
-                and self.tokens[self.pos + 1].type == "ASSIGN"
-            ):
-                statements.append(self.statement())
-            else:
-                break
-
-        return statements
 
     def parse_program(self):
         statements = []
