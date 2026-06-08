@@ -5,14 +5,18 @@ from compiler.ir import IRGenerator
 from compiler.iropt import IROptimizer
 from compiler.backend import Backend
 from vm.vm import VM
+from benchmark import FPUBenchmark
 
 vm = VM()
 optimizer = Optimizer()
 irgen = IRGenerator()
 iropt = IROptimizer()
 backend = Backend()
+benchmark = FPUBenchmark()
 
-print("Mini Compiler REPL (type END to run block, EXIT to quit)\n")
+print(
+    "Mini Compiler REPL (type END to run block, BENCHMARK to benchmark, EXIT to quit)\n"
+)
 
 lines = []
 
@@ -27,6 +31,18 @@ while True:
 
     if line.strip() == "EXIT":
         break
+
+    if line.strip() == "BENCHMARK":
+        if not lines:
+            print(
+                "ERROR: No code to benchmark. Write some code first then type BENCHMARK"
+            )
+            continue
+
+        code = "\n".join(lines)
+        benchmark.run_benchmark(code, "User Code")
+        lines = []
+        continue
 
     if line.strip() == "END":
         code = "\n".join(lines)

@@ -20,6 +20,7 @@
     --text-secondary: #8b949e;
     --green: #3fb950;
     --red: #f85149;
+    --purple: #a371f7;
 }
 
 * {
@@ -38,7 +39,6 @@ body {
     overflow: hidden;
 }
 
-/* HEADER */
 .header {
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(12px);
@@ -87,7 +87,6 @@ body {
     box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
-/* MAIN CONTENT - FLEX ROW */
 .main-content {
     flex: 1;
     display: flex;
@@ -95,14 +94,13 @@ body {
     min-height: 0;
 }
 
-/* EDITOR */
 .editor-section {
-    flex: 2;
+    flex: 65%;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-subtle);
     background: var(--bg-panel);
     min-width: 0;
+    overflow: hidden;
 }
 
 .editor-label {
@@ -113,11 +111,17 @@ body {
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.code-editor-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .CodeMirror {
-    flex: 1;
-    height: auto !important;
+    height: 100% !important;
     font-size: 13px;
     font-family: 'JetBrains Mono', monospace;
     background: var(--bg-panel) !important;
@@ -127,13 +131,53 @@ body {
     background: #0c0f14 !important;
 }
 
-/* SIDEBAR */
-.sidebar-section {
+.terminal-section {
+    flex-shrink: 0;
+    height: 240px;
+    background: #0a0c10;
+    border-top: 2px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-header {
+    padding: 5px 16px;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.terminal-header::before {
+    content: "❯";
+    color: var(--green);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.terminal-output {
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow: auto;
+    white-space: pre-wrap;
     flex: 1;
+}
+
+.sidebar-section {
+    flex: 35%;
     display: flex;
     flex-direction: column;
     background: var(--bg-panel2);
     min-width: 0;
+    overflow: hidden;
 }
 
 .tabs {
@@ -143,6 +187,7 @@ body {
     padding: 0 8px;
     gap: 2px;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .tab {
@@ -175,18 +220,22 @@ body {
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
+    min-height: 0;
 }
 
-/* TERMINAL - VISIBLE ALWAYS */
-.terminal-section {
+.benchmark-panel {
     flex-shrink: 0;
-    background: #0a0c10;
-    border-top: 2px solid var(--border-subtle);
+    height: 240px;
+    background: #0a0e17;
+    margin: 0;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-.terminal-header {
+.benchmark-header {
     padding: 8px 16px;
     background: #0d1117;
     border-bottom: 1px solid var(--border-subtle);
@@ -197,24 +246,51 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
 }
 
-.terminal-header::before {
-    content: "❯";
-    color: var(--green);
-    font-weight: bold;
-    font-size: 0.9rem;
+.benchmark-header::before {
+    content: "📊";
 }
 
-.terminal-output {
+.benchmark-stats {
     padding: 12px 16px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 11px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
     overflow: auto;
-    white-space: pre-wrap;
-    max-height: 200px;
-    min-height: 140px;
+    flex: 1;
+}
+
+.stat-card {
+    background: #0f1117;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 10px;
+    margin-bottom: 6px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+}
+
+.stat-value.speedup {
+    color: var(--purple);
+}
+
+.stat-sub {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 4px;
 }
 
 .success {
@@ -225,7 +301,6 @@ body {
     color: var(--red);
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -241,19 +316,21 @@ body {
     background: var(--accent);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .main-content {
         flex-direction: column;
     }
     .editor-section {
-        border-right: none;
-        border-bottom: 1px solid var(--border-subtle);
-        min-height: 200px;
+        flex: 50%;
     }
-    .tab {
-        padding: 8px 12px;
-        font-size: 0.65rem;
+    .sidebar-section {
+        flex: 50%;
+    }
+    .benchmark-stats {
+        grid-template-columns: 1fr;
+    }
+    .terminal-section, .benchmark-panel {
+        height: 200px;
     }
 }
 </style>
@@ -266,22 +343,26 @@ body {
 </div>
 
 <div class="main-content">
-    <!-- EDITOR -->
     <div class="editor-section">
         <div class="editor-label">📝 CODE EDITOR</div>
-        <textarea id="code">
-a = 2 + 3
-print a
+        <div class="code-editor-wrapper">
+            <textarea id="code">
+i = 0
+sum = 0.0
+while (i < 1000) 
+    sum = sum + 3.14159 * 2.71828
+    i = i + 1
 
-b = 5 * 2
-print b
-
-c = a + b
-print c
-        </textarea>
+print sum
+            </textarea>
+        </div>
+        
+        <div class="terminal-section">
+            <div class="terminal-header">OUTPUT TERMINAL</div>
+            <div class="terminal-output" id="output">—</div>
+        </div>
     </div>
 
-    <!-- SIDEBAR WITH TABS -->
     <div class="sidebar-section">
         <div class="tabs">
             <div class="tab active" data-tab="tokens">TOKENS</div>
@@ -293,13 +374,14 @@ print c
         <div class="panel-content" id="panel">
             <span style="color:#6e7681;">— click RUN to compile —</span>
         </div>
+        
+        <div class="benchmark-panel" id="benchmarkPanel">
+            <div class="benchmark-header">BENCHMARK RESULTS</div>
+            <div class="benchmark-stats" id="benchmarkStats">
+                <span style="color:#6e7681; grid-column: span 2; text-align: center;">— run code to see benchmark —</span>
+            </div>
+        </div>
     </div>
-</div>
-
-<!-- TERMINAL - FIXED AT BOTTOM -->
-<div class="terminal-section">
-    <div class="terminal-header">OUTPUT TERMINAL</div>
-    <div class="terminal-output" id="output">—</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
@@ -318,7 +400,6 @@ const editor = CodeMirror.fromTextArea(document.getElementById("code"), {
 let compilerData = {};
 let currentTab = "tokens";
 
-// Tab click handlers
 document.querySelectorAll(".tab").forEach(tab => {
     tab.addEventListener("click", function() {
         currentTab = this.getAttribute("data-tab");
@@ -345,6 +426,36 @@ function updatePanel() {
     }
 }
 
+function updateBenchmarkPanel(benchmarkData) {
+    const benchmarkStats = document.getElementById("benchmarkStats");
+    if (benchmarkData && benchmarkData.success) {
+        benchmarkStats.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-label">IR INSTRUCTIONS</div>
+                <div class="stat-value">${benchmarkData.ir_before} → ${benchmarkData.ir_after}</div>
+                <div class="stat-sub">⬇ ${benchmarkData.ir_reduction}% reduction</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">BACKEND INST</div>
+                <div class="stat-value">${benchmarkData.inst_before} → ${benchmarkData.inst_after}</div>
+                <div class="stat-sub">⬇ ${benchmarkData.inst_reduction}% reduction</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">EXECUTION TIME</div>
+                <div class="stat-value">${benchmarkData.time_before_ms}ms → ${benchmarkData.time_after_ms}ms</div>
+                <div class="stat-sub">⬇ ${((1 - benchmarkData.time_after_ms/benchmarkData.time_before_ms)*100).toFixed(1)}% faster</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">SPEEDUP</div>
+                <div class="stat-value speedup">${benchmarkData.speedup}x</div>
+                <div class="stat-sub">optimized vs unoptimized</div>
+            </div>
+        `;
+    } else {
+        benchmarkStats.innerHTML = '<span style="color:#6e7681; grid-column: span 2; text-align: center;">— benchmark failed —</span>';
+    }
+}
+
 async function runCode() {
     const code = editor.getValue();
     const outputDiv = document.getElementById("output");
@@ -355,25 +466,35 @@ async function runCode() {
     runBtn.style.opacity = "0.6";
     
     try {
-        const response = await fetch("/compile", {
+        const benchmarkResponse = await fetch("/benchmark", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: code })
+        });
+        const benchmarkData = await benchmarkResponse.json();
+        
+        if (benchmarkData.success) {
+            updateBenchmarkPanel(benchmarkData);
+        }
+        
+        const compileResponse = await fetch("/compile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ code: code })
         });
         
-        const data = await response.json();
-        compilerData = data;
+        const compileData = await compileResponse.json();
+        compilerData = compileData;
         
-        if (data.success) {
-            // Show output in terminal
-            let outputText = data.output || data.result || "(no output)";
+        if (compileData.success) {
+            let outputText = compileData.output || compileData.result || "(no output)";
             outputDiv.innerHTML = `<span class="success">✓ SUCCESS</span>\n\n${escapeHtml(outputText)}`;
             updatePanel();
         } else {
-            outputDiv.innerHTML = `<span class="error">✗ ERROR</span>\n\n${escapeHtml(data.error || "Unknown error")}`;
+            outputDiv.innerHTML = `<span class="error">✗ ERROR</span>\n\n${escapeHtml(compileData.error || "Unknown error")}`;
         }
     } catch (err) {
-        outputDiv.innerHTML = `<span class="error">✗ CONNECTION ERROR</span>\n\nCould not connect to server.\nMake sure Flask is running on port 5000.\n\n${err.message}`;
+        outputDiv.innerHTML = `<span class="error">✗ CONNECTION ERROR</span>\n\nMake sure Flask is running on port 5000.\n\n${err.message}`;
     } finally {
         runBtn.disabled = false;
         runBtn.style.opacity = "1";
@@ -390,15 +511,6 @@ function escapeHtml(str) {
     });
 }
 
-// Ctrl+Enter shortcut
-document.addEventListener("keydown", (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-        e.preventDefault();
-        runCode();
-    }
-});
-
-// Auto run on load
 setTimeout(runCode, 300);
 </script>
 </body>
