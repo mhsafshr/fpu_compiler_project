@@ -1,3 +1,6 @@
+import struct
+
+
 class Backend:
     def __init__(self):
         self.instructions = []
@@ -32,14 +35,27 @@ class Backend:
 
         return self.instructions
 
-    def load(self, x):
+    def float_to_hex(self, value):
+        try:
+            f = float(value)
+            bits = struct.unpack("!I", struct.pack("!f", f))[0]
+            return f"0x{bits:08X}"
+        except:
+            return None
+
+    def is_float_literal(self, x):
         try:
             float(x)
-            r = self.new_reg()
-            self.instructions.append(f"MOV {r} {x}")
-            return r
+            return True
         except:
-            pass
+            return False
+
+    def load(self, x):
+        if self.is_float_literal(x):
+            r = self.new_reg()
+            hex_val = self.float_to_hex(x)
+            self.instructions.append(f"MOV {r} {hex_val}")
+            return r
 
         if isinstance(x, str) and x.startswith("R"):
             return x
@@ -63,7 +79,11 @@ class Backend:
             target = ins[1]
             value = ins[2]
             r = self.new_reg()
-            self.instructions.append(f"MOV {r} {value}")
+            if self.is_float_literal(value):
+                hex_val = self.float_to_hex(value)
+                self.instructions.append(f"MOV {r} {hex_val}")
+            else:
+                self.instructions.append(f"MOV {r} {value}")
             self.var_map[target] = r
             return
 

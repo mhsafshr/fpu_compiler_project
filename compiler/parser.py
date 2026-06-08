@@ -23,9 +23,13 @@ class Parser:
         if token is None:
             raise Exception("Unexpected end of input")
 
-        if token.type == "NUMBER":
-            self.eat("NUMBER")
-            return Number(token.value)
+        if token.type == "INT":
+            self.eat("INT")
+            return Number(int(token.value))
+
+        elif token.type == "FLOAT":
+            self.eat("FLOAT")
+            return Number(float(token.value))
 
         elif token.type == "IDENT":
             self.eat("IDENT")

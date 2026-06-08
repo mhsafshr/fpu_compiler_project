@@ -1,6 +1,11 @@
 class Number:
     def __init__(self, value):
-        self.value = float(value)
+        if isinstance(value, int):
+            self.value = value
+            self.type = "int"
+        else:
+            self.value = float(value)
+            self.type = "float"
 
     def __repr__(self):
         return f"Number({self.value})"
@@ -9,6 +14,7 @@ class Number:
 class Var:
     def __init__(self, name):
         self.name = name
+        self.type = None
 
     def __repr__(self):
         return f"Var({self.name})"
@@ -19,6 +25,7 @@ class BinOp:
         self.left = left
         self.op = op
         self.right = right
+        self.type = None
 
     def __repr__(self):
         return f"BinOp({self.left}, {self.op}, {self.right})"
@@ -28,6 +35,7 @@ class Assign:
     def __init__(self, name, value):
         self.name = name
         self.value = value
+        self.type = None
 
     def __repr__(self):
         return f"Assign({self.name}, {self.value})"

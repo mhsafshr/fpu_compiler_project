@@ -1,8 +1,9 @@
 Folder PATH listing
-Volume serial number is 0000005F 6241:0CAF
+Volume serial number is 000000B4 6241:0CAF
 C:.
 ¦   .gitattributes
 ¦   .gitignore
+¦   benchmark.py
 ¦   main.py
 ¦   output.txt
 ¦   README.md
@@ -11,38 +12,41 @@ C:.
 +---compiler
 ¦   ¦   ast.py
 ¦   ¦   backend.py
-¦   ¦   codegen.py
+¦   ¦   fpu_core.py
 ¦   ¦   ir.py
 ¦   ¦   iropt.py
 ¦   ¦   isa.py
 ¦   ¦   lexer.py
 ¦   ¦   optimizer.py
 ¦   ¦   parser.py
+¦   ¦   type_checker.py
+¦   ¦   __init__.py
 ¦   ¦   
 ¦   +---__pycache__
 ¦           ast.cpython-312.pyc
+¦           ast_visualizer.cpython-312.pyc
 ¦           backend.cpython-312.pyc
 ¦           codegen.cpython-312.pyc
+¦           fpu_core.cpython-312.pyc
 ¦           ir.cpython-312.pyc
 ¦           iropt.cpython-312.pyc
 ¦           isa.cpython-312.pyc
 ¦           lexer.cpython-312.pyc
 ¦           optimizer.cpython-312.pyc
 ¦           parser.cpython-312.pyc
-¦           
-+---fpu
-¦   ¦   fpu_simulator.py
-¦   ¦   
-¦   +---__pycache__
-¦           fpu_simulator.cpython-312.pyc
+¦           type_checker.cpython-312.pyc
+¦           __init__.cpython-312.pyc
 ¦           
 +---templates
 ¦       index.html
 ¦       
 +---tests
 +---vm
-    ¦   vm.py
-    ¦   
-    +---__pycache__
-            vm.cpython-312.pyc
-            
+¦   ¦   vm.py
+¦   ¦   
+¦   +---__pycache__
+¦           vm.cpython-312.pyc
+¦           
++---__pycache__
+        benchmark.cpython-312.pyc
+        

@@ -5,6 +5,7 @@ from compiler.optimizer import Optimizer
 from compiler.ir import IRGenerator
 from compiler.iropt import IROptimizer
 from compiler.backend import Backend
+from compiler.type_checker import TypeChecker
 from compiler.ast import Number, Var, BinOp, Assign, Program, If, While, Print
 from vm.vm import VM
 import traceback
@@ -63,6 +64,9 @@ def run_compiler(code):
 
         ast = parse(tokens)
 
+        type_checker = TypeChecker()
+        type_checker.check(ast)
+
         optimizer = Optimizer()
         opt_ast = optimizer.optimize(ast)
 
@@ -103,6 +107,9 @@ def run_benchmark(code):
     try:
         tokens = lexer(code)
         ast = parse(tokens)
+
+        type_checker = TypeChecker()
+        type_checker.check(ast)
 
         optimizer = Optimizer()
         irgen = IRGenerator()

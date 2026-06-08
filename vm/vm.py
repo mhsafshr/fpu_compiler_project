@@ -1,4 +1,5 @@
 from compiler.isa import is_valid
+from compiler.fpu_core import IEEE754_32
 
 
 class VM:
@@ -7,20 +8,30 @@ class VM:
         self.vars = {}
         self.labels = {}
         self.output = []
+        self.fpu = IEEE754_32
 
     def _fpu_add(self, a, b):
-        return float(a + b)
+        return self.fpu.add(a, b)
 
     def _fpu_sub(self, a, b):
-        return float(a - b)
+        return self.fpu.sub(a, b)
 
     def _fpu_mul(self, a, b):
-        return float(a * b)
+        return self.fpu.mul(a, b)
 
     def _fpu_div(self, a, b):
-        if b == 0:
-            raise ZeroDivisionError("FPU Error: Division by zero")
-        return float(a / b)
+        return self.fpu.div(a, b)
+
+    def hex_to_float(self, x):
+        if isinstance(x, str) and x.startswith("0x"):
+            try:
+                bits = int(x, 16)
+                import struct
+
+                return struct.unpack("!f", struct.pack("!I", bits))[0]
+            except:
+                pass
+        return None
 
     def preprocess_labels(self, instructions):
         cleaned = []
@@ -40,6 +51,10 @@ class VM:
         return cleaned
 
     def get(self, x):
+        hex_val = self.hex_to_float(x)
+        if hex_val is not None:
+            return hex_val
+
         if x in self.reg:
             return self.reg[x]
 
@@ -100,7 +115,7 @@ class VM:
 
             elif op == "CONST":
                 temp_name = parts[1]
-                value = float(parts[2])
+                value = self.get(parts[2])
                 self.set_var(temp_name, value)
 
             elif op == "FADD":

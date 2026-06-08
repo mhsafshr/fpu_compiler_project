@@ -4,6 +4,7 @@ from compiler.optimizer import Optimizer
 from compiler.ir import IRGenerator
 from compiler.iropt import IROptimizer
 from compiler.backend import Backend
+from compiler.type_checker import TypeChecker
 from vm.vm import VM
 from benchmark import FPUBenchmark
 
@@ -12,6 +13,7 @@ optimizer = Optimizer()
 irgen = IRGenerator()
 iropt = IROptimizer()
 backend = Backend()
+type_checker = TypeChecker()
 benchmark = FPUBenchmark()
 
 print(
@@ -50,6 +52,9 @@ while True:
         try:
             tokens = lexer(code)
             ast = parse(tokens)
+
+            type_checker.check(ast)
+
             opt_ast = optimizer.optimize(ast)
 
             ir = irgen.generate(opt_ast)

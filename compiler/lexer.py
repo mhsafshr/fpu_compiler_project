@@ -1,6 +1,7 @@
 import re
 
-NUMBER = "NUMBER"
+INT = "INT"
+FLOAT = "FLOAT"
 IDENT = "IDENT"
 PLUS = "PLUS"
 MINUS = "MINUS"
@@ -36,7 +37,8 @@ token_specification = [
     (EQ, r"=="),
     (GT, r">"),
     (LT, r"<"),
-    (NUMBER, r"(\d+\.\d+|\d+|\.\d+)"),
+    (FLOAT, r"(\d+\.\d+|\d+\.|\.\d+)"),
+    (INT, r"\d+"),
     (IDENT, r"[a-zA-Z_][a-zA-Z0-9_]*"),
     (PLUS, r"\+"),
     (MINUS, r"-"),
