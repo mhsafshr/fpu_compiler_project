@@ -5,11 +5,55 @@ from compiler.optimizer import Optimizer
 from compiler.ir import IRGenerator
 from compiler.iropt import IROptimizer
 from compiler.backend import Backend
+from compiler.ast import Number, Var, BinOp, Assign, Program, If, While, Print
 from vm.vm import VM
 import traceback
 import time
 
 app = Flask(__name__)
+
+
+def ast_to_json(node):
+    if isinstance(node, Number):
+        return {"type": "Number", "value": node.value}
+    if isinstance(node, Var):
+        return {"type": "Var", "name": node.name}
+    if isinstance(node, BinOp):
+        return {
+            "type": "BinOp",
+            "left": ast_to_json(node.left),
+            "op": node.op,
+            "right": ast_to_json(node.right),
+        }
+    if isinstance(node, Assign):
+        return {
+            "type": "Assign",
+            "name": node.name if isinstance(node.name, str) else ast_to_json(node.name),
+            "value": ast_to_json(node.value),
+        }
+    if isinstance(node, Program):
+        return {
+            "type": "Program",
+            "statements": [ast_to_json(stmt) for stmt in node.statements],
+        }
+    if isinstance(node, While):
+        return {
+            "type": "While",
+            "condition": ast_to_json(node.condition),
+            "body": [ast_to_json(stmt) for stmt in node.body],
+        }
+    if isinstance(node, If):
+        result = {
+            "type": "If",
+            "condition": ast_to_json(node.condition),
+            "then": [ast_to_json(stmt) for stmt in node.then_body],
+        }
+        if node.else_body:
+            result["else"] = [ast_to_json(stmt) for stmt in node.else_body]
+        return result
+    if isinstance(node, Print):
+        return {"type": "Print", "expr": ast_to_json(node.expr)}
+    return {"type": "Unknown"}
 
 
 def run_compiler(code):
@@ -41,7 +85,9 @@ def run_compiler(code):
             "success": True,
             "tokens": tokens_str,
             "ast": str(ast),
+            "ast_tree": ast_to_json(ast),
             "optimized_ast": str(opt_ast),
+            "optimized_ast_tree": ast_to_json(opt_ast),
             "ir": ir_str,
             "optimized_ir": ir_opt_str,
             "instructions": instructions,

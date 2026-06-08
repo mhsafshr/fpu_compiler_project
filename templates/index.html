@@ -223,6 +223,45 @@ body {
     min-height: 0;
 }
 
+.tree-node {
+    margin-left: 0;
+    list-style: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.tree-node li {
+    list-style: none;
+    position: relative;
+    padding-left: 24px;
+    margin: 0;
+}
+
+.tree-node li::before {
+    content: "├── ";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+}
+
+.tree-node li:last-child::before {
+    content: "└── ";
+}
+
+.tree-node .node-type {
+    color: #ffd966;
+    font-weight: 600;
+}
+
+.tree-node .node-value {
+    color: #7ee0ff;
+}
+
+.tree-node .node-key {
+    color: var(--text-secondary);
+}
+
 .benchmark-panel {
     flex-shrink: 0;
     height: 240px;
@@ -409,20 +448,105 @@ document.querySelectorAll(".tab").forEach(tab => {
     });
 });
 
+function renderTree(node, isLast = true, prefix = "") {
+    if (!node) return "";
+    
+    let result = "";
+    const nodeType = node.type;
+    const currentPrefix = prefix + (isLast ? "└── " : "├── ");
+    
+    result += `<div>${currentPrefix}<span class="node-type">${nodeType}</span>`;
+    
+    if (node.value !== undefined) {
+        result += ` = <span class="node-value">${node.value}</span>`;
+    }
+    if (node.name !== undefined && nodeType === "Var") {
+        result += ` (<span class="node-value">${node.name}</span>)`;
+    }
+    if (node.op !== undefined) {
+        result += ` [<span class="node-value">${node.op}</span>]`;
+    }
+    result += `</div>`;
+    
+    const childrenKeys = [];
+    if (node.statements) childrenKeys.push(["statements", node.statements]);
+    if (node.body) childrenKeys.push(["body", node.body]);
+    if (node.then) childrenKeys.push(["then", node.then]);
+    if (node.else) childrenKeys.push(["else", node.else]);
+    if (node.condition) childrenKeys.push(["condition", node.condition]);
+    if (node.left) childrenKeys.push(["left", node.left]);
+    if (node.right) childrenKeys.push(["right", node.right]);
+    if (node.expr) childrenKeys.push(["expr", node.expr]);
+    if (node.name && nodeType === "Assign") childrenKeys.push(["name", node.name]);
+    if (node.value && nodeType === "Assign") childrenKeys.push(["value", node.value]);
+    
+    for (let i = 0; i < childrenKeys.length; i++) {
+        const [key, val] = childrenKeys[i];
+        const isLastChild = (i === childrenKeys.length - 1);
+        const newPrefix = prefix + (isLast ? "    " : "│   ");
+        
+        result += `<div>${newPrefix}${isLastChild ? "└── " : "├── "}<span class="node-key">${key}</span></div>`;
+        
+        if (Array.isArray(val)) {
+            for (let j = 0; j < val.length; j++) {
+                const isLastItem = (j === val.length - 1);
+                result += renderTree(val[j], isLastItem, newPrefix + "    ");
+            }
+        } else if (typeof val === "object") {
+            result += renderTree(val, true, newPrefix + "    ");
+        } else if (typeof val === "string" && (key === "name" || key === "op")) {
+            result += `<div>${newPrefix}    ${isLastChild ? "└── " : "├── "}<span class="node-value">${val}</span></div>`;
+        }
+    }
+    
+    return result;
+}
+
 function updatePanel() {
     const panel = document.getElementById("panel");
     let content = "";
     
-    if (currentTab === "tokens") content = compilerData.tokens?.join("\n");
-    else if (currentTab === "ast") content = compilerData.ast;
-    else if (currentTab === "optimized_ast") content = compilerData.optimized_ast;
-    else if (currentTab === "ir") content = compilerData.ir?.join("\n");
-    else if (currentTab === "instructions") content = compilerData.instructions?.join("\n");
-    
-    if (content && content.trim()) {
-        panel.textContent = content;
-    } else {
-        panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+    if (currentTab === "tokens") {
+        content = compilerData.tokens?.join("\n");
+        if (content) {
+            panel.innerHTML = `<pre style="margin:0;font-family:inherit;">${escapeHtml(content)}</pre>`;
+        } else {
+            panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+        }
+    } 
+    else if (currentTab === "ast") {
+        if (compilerData.ast_tree) {
+            panel.innerHTML = `<div class="tree-node">${renderTree(compilerData.ast_tree)}</div>`;
+        } else if (compilerData.ast) {
+            panel.innerHTML = `<pre style="margin:0;font-family:inherit;">${escapeHtml(compilerData.ast)}</pre>`;
+        } else {
+            panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+        }
+    }
+    else if (currentTab === "optimized_ast") {
+        if (compilerData.optimized_ast_tree) {
+            panel.innerHTML = `<div class="tree-node">${renderTree(compilerData.optimized_ast_tree)}</div>`;
+        } else if (compilerData.optimized_ast) {
+            panel.innerHTML = `<pre style="margin:0;font-family:inherit;">${escapeHtml(compilerData.optimized_ast)}</pre>`;
+        } else {
+            panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+        }
+    }
+    else if (currentTab === "ir") {
+        content = compilerData.ir?.join("\n");
+        if (content) {
+            panel.innerHTML = `<pre style="margin:0;font-family:inherit;">${escapeHtml(content)}</pre>`;
+        } else {
+            panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+        }
+    }
+    else if (currentTab === "instructions") {
+        content = compilerData.instructions?.join("\n");
+        if (content) {
+            panel.innerHTML = `<pre style="margin:0;font-family:inherit;">${escapeHtml(content)}</pre>`;
+        } else {
+            panel.innerHTML = '<span style="color:#6e7686;">— no data —</span>';
+        }
     }
 }
 
