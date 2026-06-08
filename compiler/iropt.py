@@ -13,7 +13,7 @@ class IROptimizer:
                 target = ins[1]
                 value = ins[2]
 
-                if target.startswith("t"):
+                if target.startswith("t") and len(target) > 1 and target[1].isdigit():
                     try:
                         temp_values[target] = float(value)
                     except:
@@ -28,13 +28,18 @@ class IROptimizer:
                 target = ins[1]
                 value = ins[2]
 
-                if value in temp_values and target.startswith("t"):
+                if (
+                    value in temp_values
+                    and target.startswith("t")
+                    and len(target) > 1
+                    and target[1].isdigit()
+                ):
                     optimized.append(("CONST", target, temp_values[value]))
                     temp_values[target] = temp_values[value]
                     continue
 
                 optimized.append(ins)
-                if target.startswith("t"):
+                if target.startswith("t") and len(target) > 1 and target[1].isdigit():
                     temp_values.pop(target, None)
                 else:
                     constants.pop(target, None)
@@ -54,10 +59,10 @@ class IROptimizer:
 
                 if cond in temp_values:
                     cond_val = temp_values[cond]
-                    if cond_val != 0.0:
+                    if cond_val == 0.0:
+                        optimized.append(("GOTO", label))
                         continue
                     else:
-                        optimized.append(("GOTO", label))
                         continue
 
                 optimized.append(ins)
@@ -66,7 +71,10 @@ class IROptimizer:
             if len(ins) == 4:
                 target, op, left, right = ins
 
-                if left in temp_values and right in temp_values:
+                compare_ops = {"<", ">", "<=", ">=", "=="}
+                is_compare = op in compare_ops
+
+                if left in temp_values and right in temp_values and not is_compare:
                     try:
                         l = float(temp_values[left])
                         r = float(temp_values[right])
@@ -81,16 +89,6 @@ class IROptimizer:
                             if r == 0:
                                 raise ZeroDivisionError()
                             val = l / r
-                        elif op == ">":
-                            val = 1.0 if l > r else 0.0
-                        elif op == "<":
-                            val = 1.0 if l < r else 0.0
-                        elif op == ">=":
-                            val = 1.0 if l >= r else 0.0
-                        elif op == "<=":
-                            val = 1.0 if l <= r else 0.0
-                        elif op == "==":
-                            val = 1.0 if l == r else 0.0
                         else:
                             optimized.append(ins)
                             continue
@@ -103,7 +101,7 @@ class IROptimizer:
                         pass
 
                 optimized.append(ins)
-                if target.startswith("t"):
+                if target.startswith("t") and len(target) > 1 and target[1].isdigit():
                     temp_values.pop(target, None)
                 continue
 

@@ -71,8 +71,10 @@ class Parser:
 
     def block(self):
         statements = []
-        while self.current() and self.current().type != "END":
+        while self.current() is not None and self.current().type != "END":
             statements.append(self.statement())
+        if self.current() is None:
+            raise Exception("Expected END but got EOF")
         self.eat("END")
         return statements
 
@@ -92,7 +94,12 @@ class Parser:
             else:
                 condition = self.comparison()
 
-            then_body = self.block()
+            if self.current() and self.current().type == "DO":
+                self.eat("DO")
+                then_body = self.block()
+            else:
+                then_body = [self.statement()]
+
             return If(condition, then_body, None)
 
         if self.current() and self.current().type == "WHILE":
@@ -125,7 +132,8 @@ class Parser:
             value = self.comparison()
             return Assign(name, value)
 
-        return self.comparison()
+        expr = self.comparison()
+        return expr
 
     def parse_program(self):
         statements = []
