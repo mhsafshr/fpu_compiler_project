@@ -1,3 +1,4 @@
+# Number: integer or float literal with automatic type detection
 class Number:
     def __init__(self, value):
         if isinstance(value, int):
@@ -11,6 +12,7 @@ class Number:
         return f"Number({self.value})"
 
 
+# Var: variable reference, type resolved later by type checker
 class Var:
     def __init__(self, name):
         self.name = name
@@ -20,6 +22,7 @@ class Var:
         return f"Var({self.name})"
 
 
+# BinOp: binary operation (+, -, *, /, <, >, <=, >=, ==)
 class BinOp:
     def __init__(self, left, op, right):
         self.left = left
@@ -31,6 +34,7 @@ class BinOp:
         return f"BinOp({self.left}, {self.op}, {self.right})"
 
 
+# Assign: variable assignment (x = expression)
 class Assign:
     def __init__(self, name, value):
         self.name = name
@@ -41,6 +45,7 @@ class Assign:
         return f"Assign({self.name}, {self.value})"
 
 
+# Program: root node containing a list of statements
 class Program:
     def __init__(self, statements):
         self.statements = statements
@@ -49,6 +54,7 @@ class Program:
         return f"Program({self.statements})"
 
 
+# If: conditional statement with optional else
 class If:
     def __init__(self, condition, then_body, else_body=None):
         self.condition = condition
@@ -67,6 +73,7 @@ class If:
         )
 
 
+# While: loop statement
 class While:
     def __init__(self, condition, body):
         self.condition = condition
@@ -76,6 +83,7 @@ class While:
         return f"While({self.condition}, body={self.body})"
 
 
+# Print: output statement
 class Print:
     def __init__(self, expr):
         self.expr = expr

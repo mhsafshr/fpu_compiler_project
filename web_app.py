@@ -15,6 +15,7 @@ app = Flask(__name__)
 
 
 def ast_to_json(node):
+    """Convert AST node to JSON for frontend tree visualization."""
     if isinstance(node, Number):
         return {"type": "Number", "value": node.value}
     if isinstance(node, Var):
@@ -58,6 +59,7 @@ def ast_to_json(node):
 
 
 def run_compiler(code):
+    """Run full compilation pipeline and return all intermediate results."""
     try:
         tokens = lexer(code)
         tokens_str = [str(t) for t in tokens]
@@ -104,6 +106,7 @@ def run_compiler(code):
 
 
 def run_benchmark(code):
+    """Run benchmark comparing optimized vs unoptimized code."""
     try:
         tokens = lexer(code)
         ast = parse(tokens)
@@ -117,6 +120,7 @@ def run_benchmark(code):
         backend = Backend()
         vm = VM()
 
+        # Without optimization
         ir_before = irgen.generate(ast)
         inst_before = backend.generate(ir_before)
 
@@ -125,6 +129,7 @@ def run_benchmark(code):
         vm.run(inst_before)
         time_before = (time.time() - start) * 1000
 
+        # With optimization
         opt_ast = optimizer.optimize(ast)
         ir_after = irgen.generate(opt_ast)
         ir_after = iropt.optimize(ir_after)
@@ -135,6 +140,7 @@ def run_benchmark(code):
         vm.run(inst_after)
         time_after = (time.time() - start) * 1000
 
+        # Calculate improvements
         ir_reduction = (
             (1 - len(ir_after) / len(ir_before)) * 100 if len(ir_before) > 0 else 0
         )

@@ -9,7 +9,10 @@ from vm.vm import VM
 
 
 class FPUBenchmark:
+    """Benchmark tool to compare optimized vs unoptimized code execution."""
+
     def __init__(self):
+        """Create all compiler components needed for benchmarking."""
         self.optimizer = Optimizer()
         self.irgen = IRGenerator()
         self.iropt = IROptimizer()
@@ -17,13 +20,15 @@ class FPUBenchmark:
         self.vm = VM()
 
     def run_benchmark(self, code, name="Unnamed"):
+        """Run benchmark: measure instructions count and execution time."""
+
         print(f"\n{'='*60}")
         print(f"Benchmark: {name}")
         print(f"{'='*60}")
 
+        # Run without optimization
         tokens = lexer(code)
         ast = parse(tokens)
-
         ir = self.irgen.generate(ast)
         inst = self.backend.generate(ir)
 
@@ -32,6 +37,7 @@ class FPUBenchmark:
         result_no_opt = self.vm.run(inst)
         time_no_opt = time.time() - start
 
+        # Run with optimization
         opt_ast = self.optimizer.optimize(ast)
         ir_opt = self.irgen.generate(opt_ast)
         ir_opt_opt = self.iropt.optimize(ir_opt)
@@ -42,6 +48,7 @@ class FPUBenchmark:
         result_opt = self.vm.run(inst_opt)
         time_opt = time.time() - start
 
+        # Calculate statistics
         ir_before_count = len(ir)
         ir_after_count = len(ir_opt_opt)
         inst_before_count = len(inst)
@@ -57,6 +64,7 @@ class FPUBenchmark:
         )
         speedup = time_no_opt / time_opt if time_opt > 0 else 1.0
 
+        # Print results
         print(f"\n📊 STATISTICS:")
         print(f"  IR instructions (before opt):  {ir_before_count}")
         print(f"  IR instructions (after opt):   {ir_after_count}")
